@@ -58,6 +58,9 @@ export const setClusterConfig = async (
     solConnection = new web3.Connection(rpc);
   }
 
+  //output solConnection
+  console.log("solConnection is:",solConnection)
+
   const walletKeypair = Keypair.fromSecretKey(
     Uint8Array.from(JSON.parse(fs.readFileSync(keypair, "utf-8"))),
     { skipValidation: true }
@@ -80,9 +83,15 @@ export const setClusterConfig = async (
 };
 
 export const configProject = async () => {
+  console.log("🔧 开始配置项目...");
 
   const teamWallet = new PublicKey("Br4NUsLoHRgAcxTBsDwgnejnjqMe5bkyio1YCrM3gWM2")
   const migrationWallet = new PublicKey("DQ8fi6tyN9MPD5bpSpUXxKd9FVRY2WcnoniVEgs6StEW");
+  
+  console.log("📍 Team Wallet:", teamWallet.toBase58());
+  console.log("📍 Migration Wallet:", migrationWallet.toBase58());
+  console.log("📍 Authority (Payer):", payer.publicKey.toBase58());
+  
   // Create a dummy config object to pass as argument.
   const newConfig = {
     authority: payer.publicKey,
@@ -110,6 +119,13 @@ export const configProject = async () => {
     initialized: false,
   };
 
+  //output solconnection
+  console.log("solConnection",solConnection)
+
+  //output program
+  console.log("program",program)
+
+  console.log("⏳ 创建配置交易...");
   const tx = await createConfigTx(
     payer.publicKey,
     newConfig,
@@ -117,33 +133,51 @@ export const configProject = async () => {
     program
   );
 
+  console.log("⏳ 执行配置交易...");
   await execTx(tx, solConnection, payer);
+  console.log("✅ 项目配置完成!");
 };
 
 export const createBondingCurve = async () => {
+  console.log("🚀 开始创建 Bonding Curve...");
+  
   const configPda = PublicKey.findProgramAddressSync(
     [Buffer.from(SEED_CONFIG)],
     program.programId
   )[0];
-  const configAccount = await program.account.config.fetch(configPda);
+  
+  console.log("📍 Config PDA 地址:", configPda.toBase58());
+  console.log("📍 程序 ID:", program.programId.toBase58());
+  console.log("📍 连接的网络:", solConnection.rpcEndpoint);
+  
+  try {
+    console.log("⏳ 正在获取 config 账户...");
+    const configAccount = await program.account.config.fetch(configPda);
+    console.log("✅ 成功获取 config 账户:", configAccount);
+    
+    const tx = await createBondingCurveTx(
+      TEST_DECIMALS,
+      TEST_TOKEN_SUPPLY,
+      TEST_VIRTUAL_RESERVES,
 
-  const tx = await createBondingCurveTx(
-    TEST_DECIMALS,
-    TEST_TOKEN_SUPPLY,
-    TEST_VIRTUAL_RESERVES,
+      //  metadata
+      TEST_NAME,
+      TEST_SYMBOL,
+      TEST_URI,
 
-    //  metadata
-    TEST_NAME,
-    TEST_SYMBOL,
-    TEST_URI,
+      payer.publicKey,
+      configAccount.teamWallet,
+      solConnection,
+      program
+    );
 
-    payer.publicKey,
-    configAccount.teamWallet,
-    solConnection,
-    program
-  );
-
-  await execTx(tx, solConnection, payer);
+    await execTx(tx, solConnection, payer);
+  } catch (error) {
+    console.log("❌ 获取 config 账户失败!");
+    console.log("错误详情:", error);
+    console.log("🔍 请先运行 'yarn script config' 来初始化配置账户");
+    throw error;
+  }
 };
 
 export const swap = async (

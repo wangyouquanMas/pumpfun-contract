@@ -91,17 +91,17 @@ function programCommand(name: string) {
       //  mainnet-beta, testnet, devnet
       "-e, --env <string>",
       "Solana cluster env name",
-      "mainnet-beta"
+      "devnet"  //TODO: 修改网络节点
     )
     .option(
       "-r, --rpc <string>",
       "Solana cluster RPC name",
-      "https://meriel-0exl8k-fast-mainnet.helius-rpc.com"
+      "https://api.devnet.solana.com" //TODO: 修改网络节点
     )
     .option(
       "-k, --keypair <string>",
       "Solana wallet Keypair Path",
-      "./keys/admin.json"
+      "/root/.config/solana/id.json" //TODO: 修改钱包地址
     );
 }
 

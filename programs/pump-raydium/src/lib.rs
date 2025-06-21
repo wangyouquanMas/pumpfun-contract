@@ -10,13 +10,17 @@ pub mod utils;
 use instructions::{configure::*, create_bonding_curve::*, migrate::*, swap::*};
 use state::config::*;
 
-declare_id!("BjcqoRYZuWuGu5nHSrEyi5DFZKg51xNSP9RP7nEYp75j");
+declare_id!("2CfjzUDDcLYcjCt4HvbEDhmnvJHxpmuhVKb2KD8xxpSK");
 
 #[program]
 pub mod pump_raydium {
     use super::*;
 
     pub fn configure(ctx: Context<Configure>, new_config: Config) -> Result<()> {
+        msg!("🚀 Configure 函数被调用");
+        msg!("📍 当前程序ID: {}", crate::ID);
+        msg!("📍 Context程序ID: {}", ctx.program_id);
+        
         ctx.accounts.handler(new_config, ctx.bumps.config)
     }
 

@@ -55,65 +55,77 @@ pub struct Configure<'info> {
 
 impl<'info> Configure<'info> {
     pub fn handler(&mut self, new_config: Config, config_bump: u8) -> Result<()> {
-        // let serialized_config =
-        //     [&Config::DISCRIMINATOR, new_config.try_to_vec()?.as_slice()].concat();
-        // let serialized_config_len = serialized_config.len();
-        // let config_cost = Rent::get()?.minimum_balance(serialized_config_len);
+        // 添加日志来调试程序ID不匹配问题
+        msg!("🔍 调试程序ID匹配:");
+        msg!("📍 声明的程序ID (crate::ID): {}", crate::ID);
+        msg!("📍 实际调用的程序ID: {}", *self.config.owner);
+        msg!("📍 配置账户所有者: {}", *self.config.owner);
+        msg!("📍 系统程序ID: {}", system_program::ID);
+        
+        let serialized_config =
+            [&Config::DISCRIMINATOR, new_config.try_to_vec()?.as_slice()].concat();
+        let serialized_config_len = serialized_config.len();
+        let config_cost = Rent::get()?.minimum_balance(serialized_config_len);
 
-        // //  init config pda
-        // if self.config.owner != &crate::ID {
-        //     let cpi_context = CpiContext::new(
-        //         self.system_program.to_account_info(),
-        //         system_program::CreateAccount {
-        //             from: self.payer.to_account_info(),
-        //             to: self.config.to_account_info(),
-        //         },
-        //     );
-        //     system_program::create_account(
-        //         cpi_context.with_signer(&[&[CONFIG.as_bytes(), &[config_bump]]]),
-        //         config_cost,
-        //         serialized_config_len as u64,
-        //         &crate::ID,
-        //     )?;
-        // } else {
-        //     let data = self.config.try_borrow_data()?;
-        //     if data.len() < 8 || &data[0..8] != Config::DISCRIMINATOR {
-        //         return err!(ContractError::IncorrectConfigAccount);
-        //     }
-        //     let config = Config::deserialize(&mut &data[8..])?;
+        //  init config pda
+        if self.config.owner != &crate::ID {
+            msg!("⚠️  配置账户所有者不匹配，正在创建新账户");
+            msg!("📍 期望的所有者: {}", crate::ID);
+            msg!("📍 实际的所有者: {}", *self.config.owner);
+            
+            let cpi_context = CpiContext::new(
+                self.system_program.to_account_info(),
+                system_program::CreateAccount {
+                    from: self.payer.to_account_info(),
+                    to: self.config.to_account_info(),
+                },
+            );
+            system_program::create_account(
+                cpi_context.with_signer(&[&[CONFIG.as_bytes(), &[config_bump]]]),
+                config_cost,
+                serialized_config_len as u64,
+                &crate::ID,
+            )?;
+        } else {
+            msg!("✅ 配置账户所有者匹配，正在验证现有配置");
+            let data = self.config.try_borrow_data()?;
+            if data.len() < 8 || &data[0..8] != Config::DISCRIMINATOR {
+                return err!(ContractError::IncorrectConfigAccount);
+            }
+            let config = Config::deserialize(&mut &data[8..])?;
 
-        //     if config.authority != self.payer.key() {
-        //         return err!(ContractError::IncorrectAuthority);
-        //     }
-        // }
+            if config.authority != self.payer.key() {
+                return err!(ContractError::IncorrectAuthority);
+            }
+        }
 
-        // let lamport_delta = (config_cost as i64) - (self.config.lamports() as i64);
-        // if lamport_delta > 0 {
-        //     system_program::transfer(
-        //         CpiContext::new(
-        //             self.system_program.to_account_info(),
-        //             system_program::Transfer {
-        //                 from: self.payer.to_account_info(),
-        //                 to: self.config.to_account_info(),
-        //             },
-        //         ),
-        //         lamport_delta as u64,
-        //     )?;
-        //     self.config.realloc(serialized_config_len, false)?;
-        // }
+        let lamport_delta = (config_cost as i64) - (self.config.lamports() as i64);
+        if lamport_delta > 0 {
+            system_program::transfer(
+                CpiContext::new(
+                    self.system_program.to_account_info(),
+                    system_program::Transfer {
+                        from: self.payer.to_account_info(),
+                        to: self.config.to_account_info(),
+                    },
+                ),
+                lamport_delta as u64,
+            )?;
+            self.config.realloc(serialized_config_len, false)?;
+        }
 
-        // (self.config.try_borrow_mut_data()?[..serialized_config_len])
-        //     .copy_from_slice(serialized_config.as_slice());
+        (self.config.try_borrow_mut_data()?[..serialized_config_len])
+            .copy_from_slice(serialized_config.as_slice());
 
-        // //  initialize global vault if needed
-        // if self.global_vault.lamports() == 0 {
-        //     sol_transfer_from_user(
-        //         &self.payer,
-        //         self.global_vault.clone(),
-        //         &self.system_program,
-        //         1000000,
-        //     )?;
-        // }
+        //  initialize global vault if needed
+        if self.global_vault.lamports() == 0 {
+            sol_transfer_from_user(
+                &self.payer,
+                self.global_vault.clone(),
+                &self.system_program,
+                1000000,
+            )?;
+        }
         Ok(())
     }
 }
