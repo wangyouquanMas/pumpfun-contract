@@ -138,6 +138,9 @@ Use these CLI scripts to interact with your smart contract locally.
 
 ### Initialize Program
 
+先执行yarn install 安装必要依赖
+
+
 ```bash
 yarn script config
 ```

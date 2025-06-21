@@ -11,7 +11,7 @@ pump_raydium = "2CfjzUDDcLYcjCt4HvbEDhmnvJHxpmuhVKb2KD8xxpSK"
 pump_raydium = "2CfjzUDDcLYcjCt4HvbEDhmnvJHxpmuhVKb2KD8xxpSK"
 
 [programs.mainnet]
-pump_raydium = "2CfjzUDDcLYcjCt4HvbEDhmnvJHxpmuhVKb2KD8xxpSK"
+pump_raydium = "8aSCSFDdGbSnXCstVQwwxdBevgckcJXsMYmPuhvKKMQ6"
 
 [registry]
 url = "https://api.apr.dev"

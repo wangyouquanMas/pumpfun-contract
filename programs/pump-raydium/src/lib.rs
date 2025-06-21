@@ -10,7 +10,7 @@ pub mod utils;
 use instructions::{configure::*, create_bonding_curve::*, migrate::*, swap::*};
 use state::config::*;
 
-declare_id!("2CfjzUDDcLYcjCt4HvbEDhmnvJHxpmuhVKb2KD8xxpSK");
+declare_id!("8aSCSFDdGbSnXCstVQwwxdBevgckcJXsMYmPuhvKKMQ6");
 
 #[program]
 pub mod pump_raydium {
